@@ -1,31 +1,42 @@
-## Запуск проекта
+# PostgreSQL Master-Slave Репликация в Docker
 
-1. Клонировать репозиторий:
+## Описание
 
-   git clone https://github.com/yourusername/yourrepo.git
-   cd yourrepo
+Этот проект демонстрирует настройку репликации PostgreSQL (Master-Slave) с использованием Docker и Docker Compose. Инициализация базы данных и настройка репликации происходят автоматически при запуске контейнеров.
 
-2. Очистить данные (опционально):
 
-   docker-compose down --volumes
-   rm -rf ./data ./data-slave
+## Шаги для запуска
 
-3. Запустить проект:
+1. **Клонируйте репозиторий:**
 
-   docker-compose up
+   ```bash
+   git clone https://github.com/your_username/your_repository.git
+   cd your_repository
 
-4. База данных будет доступна:
+2. **Запустите контейнеры**
+    ```bash
+   docker-compose up -d
 
-   - Master: localhost:5432
-   - Slave: localhost:5433
+3. Проверка состоянияя
+   ```bash
+   docker ps
+   
+4. Проверка статуса репликации
+   ```bash
+   ## на мастере
+   docker exec -it postgres_master psql -U postgres -c "SELECT pid, state, client_addr FROM pg_stat_replication;"
+   ## на слейве
+   docker exec -it postgres_slave psql -U postgres -c "SELECT status, sender_host, sender_port FROM pg_stat_wal_receiver;"
 
-## Описание базы данных
-
-- Включает таблицы аэропортов, самолётов, рейсов, бронирований, билетов.
-- Создано представление `airport_traffic` для расчёта пассажиропотока аэропортов.
-
-## Структура файлов
-
-- docker-init.sh — скрипт инициализации.
-- init.sql — DDL для создания таблиц.
-- view.sql — скрипт для создания представления.
+5. Тестирование
+   ```bash
+   docker exec -it postgres_master psql -U postgres -c "
+   CREATE TABLE test_table (id SERIAL PRIMARY KEY, data TEXT);
+   INSERT INTO test_table (data) VALUES ('Hello, replication!');"
+   
+   ## Проверка наличия данных на слейве:
+   docker exec -it postgres_slave psql -U postgres -c "SELECT * FROM test_table;"
+   
+6. Завершение работы
+   ```bash
+   docker-compose down --volumes --remove-orphans
