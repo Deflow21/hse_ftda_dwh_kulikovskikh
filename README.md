@@ -40,3 +40,8 @@
 6. Завершение работы
    ```bash
    docker-compose down --volumes --remove-orphans
+
+
+
+
+Вьюшка находится в init-script/master/03-create-passenger-flow-view.sql
