@@ -1,0 +1,11 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY dmp_service.py .
+COPY config.yaml .
+
+CMD ["python", "dmp_service.py"]

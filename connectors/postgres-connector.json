@@ -1,0 +1,23 @@
+{
+  "name": "postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "plugin.name": "pgoutput",
+    "database.hostname": "postgres_master",
+    "database.port": "5432",
+    "database.user": "replicator",
+    "database.password": "replicator_password",
+    "database.dbname": "postgres",
+    "database.server.name": "postgres_master",
+    "table.include.list": "public.bookings,public.flights,public.tickets",
+    "transforms": "route",
+    "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
+    "transforms.route.regex": "(.*)",
+    "transforms.route.replacement": "$1",
+    "publication.autocreate.mode": "filtered",
+    "publication.name": "my_publication",
+    "database.history.kafka.bootstrap.servers": "kafka:9092",
+    "database.history.kafka.topic": "schema-changes.postgres_master"
+  }
+}

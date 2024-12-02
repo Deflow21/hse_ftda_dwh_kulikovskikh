@@ -1,1 +1,3 @@
-CREATE ROLE replicator WITH REPLICATION LOGIN ENCRYPTED PASSWORD 'replica_password';
+CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'replicator_password';
+
+ALTER ROLE replicator WITH CREATEDB;
