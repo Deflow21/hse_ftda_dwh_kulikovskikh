@@ -1,42 +1,61 @@
-# PostgreSQL Master-Slave Репликация в Docker
+# Домашнее задание 2
 
-## Описание
+## Описание проекта
 
-Этот проект демонстрирует настройку репликации PostgreSQL (Master-Slave) с использованием Docker и Docker Compose. Инициализация базы данных и настройка репликации происходят автоматически при запуске контейнеров.
+## Задачи
+
+1. **Реализация архитектуры DWH**:
+   - Выбрана архитектура **Data Vault 2.0**, поскольку она хорошо подходит для моделирования источников данных с высокой степенью изменений и обеспечивает версионирование данных, легкость адаптации под изменения источников данны и поддержку insert-only подхода (данные не удаляются и не обновляются).
+   - Написан DDL для детального слоя DWH.
+   - Составлена ER-диаграмма для DWH
+
+2. **Поднятие нового инстанса PostgreSQL для DWH**:
+   - Создан контейнер для DWH в `docker-compose.yaml`.
+   - Инициализирована структура детального слоя DWH в схеме `dwh_detailed` с техническими полями.
+
+3. **Интеграция Debezium**:
+   - Настроен Debezium для отслеживания изменений в master-хосте.
+   - Изменения передаются в Kafka.
+
+4. **Реализация DMP-сервиса**:
+   - Написан Python-скрипт, который читает данные из Kafka, подготавливает их и вставляет в DWH.
+   - DMP-сервис упакован в Docker-контейнер.
+
+5. **ER-диаграмма**:
+   - доступна в репозитории.
+
+---
+
+## Инструкция по запуску
+
+### Шаг 1: Клонирование репозитория
+```bash
+git clone -b hw_2 https://github.com/ваш-репозиторий.git
+cd ваш-репозиторий
+```
 
 
-## Шаги для запуска
+### Шаг 2: Запуск
+```bash
+docker-compose up --build
+```
 
-1. **Клонируйте репозиторий:**
+### Шаг 4: Проверка
+На мастере и на реплике с посмощью 
+```bash
+SELECT * FROM bookings;
+```
+Кафка
+```bash
+docker exec -it kafka kafka-topics.sh --list --bootstrap-server kafka:9092
+```
+DWH 
+```bash
+SELECT * FROM dwh_detailed.hub_airports;
+```
+DMP-сервис
+```bash
+docker logs dmp_service
+```
 
-   ```bash
-   git clone https://github.com/your_username/your_repository.git
-   cd your_repository
-
-2. **Запустите контейнеры**
-    ```bash
-   docker-compose up -d
-
-3. Проверка состоянияя
-   ```bash
-   docker ps
-   
-4. Проверка статуса репликации
-   ```bash
-   ## на мастере
-   docker exec -it postgres_master psql -U postgres -c "SELECT pid, state, client_addr FROM pg_stat_replication;"
-   ## на слейве
-   docker exec -it postgres_slave psql -U postgres -c "SELECT status, sender_host, sender_port FROM pg_stat_wal_receiver;"
-
-5. Тестирование
-   ```bash
-   docker exec -it postgres_master psql -U postgres -c "
-   CREATE TABLE test_table (id SERIAL PRIMARY KEY, data TEXT);
-   INSERT INTO test_table (data) VALUES ('Hello, replication!');"
-   
-   ## Проверка наличия данных на слейве:
-   docker exec -it postgres_slave psql -U postgres -c "SELECT * FROM test_table;"
-   
-6. Завершение работы
-   ```bash
-   docker-compose down --volumes --remove-orphans
+Домашка конечно атас, большую часть времени потратил на фиксы и вроде все исправил, но не уверен честно говоря ;)
