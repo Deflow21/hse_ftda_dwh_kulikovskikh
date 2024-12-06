@@ -1,3 +1,11 @@
+<h1 style="color: red;">⚠️ ВНИМАНИЕ ⚠️</h1>
+<p>Домашние задания 2, 3 и 4 находятся на других ветках проекта с соответствующими названиями:</p>
+<ul>
+  <li><strong>hw_2</strong></li>
+  <li><strong>hw_3</strong></li>
+  <li><strong>hw_4</strong></li>
+</ul>
+
 # PostgreSQL Master-Slave Репликация в Docker
 
 ## Описание
