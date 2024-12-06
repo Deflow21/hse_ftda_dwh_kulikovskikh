@@ -218,10 +218,114 @@ services:
     networks:
       - default
 
+  postgres_airflow:
+    container_name: postgres_airflow
+    image: postgres:14.5
+    restart: always
+    volumes:
+      - airflow-postgres-data:/var/lib/postgresql/data
+      - ./init-script/config/airflow/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+      - ./init-script/config/airflow/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow_password  # Установите надежный пароль
+      POSTGRES_DB: airflow
+      PGDATA: /var/lib/postgresql/data/db-files/
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/var/lib/postgresql/data/db-files/postgresql.conf"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "airflow" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - default
+
+  airflow-webserver:
+    image: apache/airflow:2.6.1
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - postgres_airflow  # Добавлено
+      - postgres_dwh
+      - kafka
+      - debezium
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow_password@postgres_airflow:5432/airflow
+      AIRFLOW_CONN_POSTGRES_DWH: "postgresql://postgres:postgres_dwh@postgres_dwh:5432/dwh_detailed"
+      AIRFLOW__CORE__FERNET_KEY: 'MEddFpD1s_DBq9l7BlzNGQJDNBEE8MlyWwcafoQr4Kk=' # Замените на ваш FERNET_KEY
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__SECRET_KEY: 'N9S57NcLEKOS1RIKZ9fdziiMdsu5tF5berLJeeaTf5s' # Замените на ваш SECRET_KEY
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    ports:
+      - "8080:8080"
+    command: webserver
+    networks:
+      - default
+
+  airflow-scheduler:
+    image: apache/airflow:2.6.1
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - airflow-webserver
+      - postgres_airflow  # Добавлено
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow_password@postgres_airflow:5432/airflow
+      AIRFLOW_CONN_POSTGRES_DWH: "postgresql://postgres:postgres_dwh@postgres_dwh:5432/dwh_detailed"
+      AIRFLOW__CORE__FERNET_KEY: 'MEddFpD1s_DBq9l7BlzNGQJDNBEE8MlyWwcafoQr4Kk=' # Замените на тот же FERNET_KEY
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    command: scheduler
+    networks:
+      - default
+
+  airflow-init:
+    image: apache/airflow:2.6.1
+    container_name: airflow-init
+    depends_on:
+      postgres_airflow:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow_password@postgres_airflow:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: 'MEddFpD1s_DBq9l7BlzNGQJDNBEE8MlyWwcafoQr4Kk=' # Замените на тот же FERNET_KEY
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    entrypoint: >
+      bash -c "
+            airflow db init &&
+            airflow connections add 'postgres_dwh' --conn-uri 'postgresql+psycopg2://postgres:postgres_dwh@postgres_dwh:5432/dwh_detailed' &&
+            airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com &&
+            exit
+          "
+    networks:
+      - default
+
 volumes:
   master-data:
   replica-data:
   dwh-data:
+  airflow-dags:
+  airflow-logs:
+  airflow-plugins:
+  airflow-postgres-data:
 
 networks:
   default:

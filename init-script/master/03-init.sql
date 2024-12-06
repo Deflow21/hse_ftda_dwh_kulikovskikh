@@ -33,8 +33,6 @@ CREATE TABLE flights (
 -- Создание таблицы бронирований
 CREATE TABLE bookings (
     book_ref CHAR(6) PRIMARY KEY,
-    flight INTEGER NOT NULL,
-    passenger INTEGER NOT NULL,
     book_date TIMESTAMPTZ NOT NULL,
     total_amount NUMERIC(10,2) NOT NULL
 );

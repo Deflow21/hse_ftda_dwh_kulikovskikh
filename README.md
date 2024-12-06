@@ -1,42 +1,44 @@
-# PostgreSQL Master-Slave Репликация в Docker
+## Инструкция по запуску проекта
 
-## Описание
+### Требования
+Для успешного выполнения проекта вам необходимо:
+- Установленный **Docker** и **Docker Compose**.
 
-Этот проект демонстрирует настройку репликации PostgreSQL (Master-Slave) с использованием Docker и Docker Compose. Инициализация базы данных и настройка репликации происходят автоматически при запуске контейнеров.
+### Описание ДЗ 3
 
+Выполненное Дз 3 в отдельной ветке hw_3
+Весь функционал с Аирфлоу и ETL реализован.
 
-## Шаги для запуска
+## Инструкция по запуску и проверке проекта
 
-1. **Клонируйте репозиторий:**
+### Открытие интерфейса Airflow
+1. Перейдите по адресу: [http://localhost:8080](http://localhost:8080).
+2. Введите данные для входа:
+   - **Логин**: `admin`
+   - **Пароль**: `admin`
 
-   ```bash
-   git clone https://github.com/your_username/your_repository.git
-   cd your_repository
+### Активация DAG’ов
+1. Зайдите в интерфейс Airflow.
+2. Найдите DAG в списке:
+   - `frequent_flyer_dag`
+   - `passenger_traffic_dag`
+3. Нажмите на переключатель (Toggle) рядом с названием DAG, чтобы активировать его.
 
-2. **Запустите контейнеры**
-    ```bash
-   docker-compose up -d
+### Запуск DAG’ов вручную (опционально)
+1. В интерфейсе Airflow выберите DAG.
+2. Нажмите кнопку **Trigger DAG** в правом верхнем углу.
 
-3. Проверка состоянияя
-   ```bash
-   docker ps
-   
-4. Проверка статуса репликации
-   ```bash
-   ## на мастере
-   docker exec -it postgres_master psql -U postgres -c "SELECT pid, state, client_addr FROM pg_stat_replication;"
-   ## на слейве
-   docker exec -it postgres_slave psql -U postgres -c "SELECT status, sender_host, sender_port FROM pg_stat_wal_receiver;"
+---
 
-5. Тестирование
-   ```bash
-   docker exec -it postgres_master psql -U postgres -c "
-   CREATE TABLE test_table (id SERIAL PRIMARY KEY, data TEXT);
-   INSERT INTO test_table (data) VALUES ('Hello, replication!');"
-   
-   ## Проверка наличия данных на слейве:
-   docker exec -it postgres_slave psql -U postgres -c "SELECT * FROM test_table;"
-   
-6. Завершение работы
-   ```bash
-   docker-compose down --volumes --remove-orphans
+### Проверка результата
+
+#### 1. Подключитесь к базе данных `dwh_detailed`:
+```bash
+docker exec -it postgres_dwh psql -U postgres -d dwh_detailed
+```
+
+### 2. Проверьте что витрины существую:
+```bash
+SELECT * FROM presentation.frequent_flyer LIMIT 1;
+SELECT * FROM presentation.passenger_traffic LIMIT 1;
+```
